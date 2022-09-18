@@ -8,6 +8,7 @@ import "firebase/storage";
 var firebaseConfig = {
     apiKey: "AIzaSyBZooInpw9dvQ_qg-seazvM-2K3bAfUAV8",
     authDomain: "react-redux-firebase-cha-1a50f.firebaseapp.com",
+    databaseURL: "https://react-redux-firebase-cha-1a50f-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "react-redux-firebase-cha-1a50f",
     storageBucket: "react-redux-firebase-cha-1a50f.appspot.com",
     messagingSenderId: "967222648992",
@@ -17,3 +18,5 @@ var firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 // firebase.analytics();
+
+export default firebase;
