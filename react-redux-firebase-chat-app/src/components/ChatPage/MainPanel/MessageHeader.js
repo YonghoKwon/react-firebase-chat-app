@@ -53,7 +53,7 @@ function MessageHeader({ handleSearchChange }) {
           if (err !== null) {
             console.error(err);
           }
-        }).then( () => console.log("isFavorited is true") )
+        }).then( () => console.log("isFavorited is true > false") )
 
       setIsFavorited(prev => !prev)
     } else {
@@ -67,7 +67,8 @@ function MessageHeader({ handleSearchChange }) {
             image: chatRoom.createdBy.image
           }
         }
-      })
+      }).then( () => console.log("isFavorited is false > true") )
+
       setIsFavorited(prev => !prev)
     }
   }
@@ -140,13 +141,15 @@ function MessageHeader({ handleSearchChange }) {
             </InputGroup>
           </Col>
         </Row>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <p>
-            <Image src={chatRoom && chatRoom.createdBy.image}
-              roundedCircle style={{ width: '30px', height: '30px' }}
-            /> {" "} {chatRoom && chatRoom.createdBy.name}
-          </p>
-        </div>
+        {!isPrivateChatRoom &&
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <p>
+              <Image src={chatRoom && chatRoom.createdBy.image}
+                roundedCircle style={{ width: '30px', height: '30px' }}
+              /> {" "} {chatRoom && chatRoom.createdBy.name}
+            </p>
+          </div>
+        }
         <Row>
           <Col>
             <Accordion>

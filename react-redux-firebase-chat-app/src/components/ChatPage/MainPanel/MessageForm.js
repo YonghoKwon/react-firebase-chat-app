@@ -17,6 +17,7 @@ function MessageForm() {
   const messagesRef = firebase.database().ref("messages")
   const inputOpenImageRef = useRef();
   const storageRef = firebase.storage().ref();
+  const typingRef = firebase.database().ref("typing");
   const isPrivateChatRoom = useSelector(state => state.chatRoom.isPrivateChatRoom)
 
   const handleChange = (event) => {
@@ -52,6 +53,9 @@ function MessageForm() {
     // Save Message in firebase
     try {
       await messagesRef.child(chatRoom.id).push().set(createMessage())
+
+      await typingRef.child(chatRoom.id).child(user.uid).remove();
+
       setLoading(false)
       setContent("")
       setErrors([])
@@ -114,11 +118,22 @@ function MessageForm() {
     }
   }
 
+  const handleKeyDown = () => {
+    if (content) {
+      typingRef.child(chatRoom.id).child(user.uid).set(user.displayName)
+        .then( () => console.log("set Typing state"))
+    } else {
+      typingRef.child(chatRoom.id).child(user.uid).remove()
+        .then( () => console.log("remove Typing state"))
+    }
+  }
+
   return (
     <div>
       <Form onSubmit={handleSubmit}>
         <Form.Group controlId="exampleForm.ControlTextarea1">
           <Form.Control
+            onKeyUp={handleKeyDown}
             value={content}
             onChange={handleChange}
             as="textarea"
@@ -142,7 +157,7 @@ function MessageForm() {
             onClick={handleSubmit}
             className="message-form-button"
             style={{ width: '100%' }}
-            disabled={loading ? true : false}
+            disabled={loading}
           >
             SEND
           </button>
@@ -152,7 +167,7 @@ function MessageForm() {
             onClick={handleOpenImageRef}
             className="message-form-button"
             style={{ width: '100%' }}
-            disabled={loading ? true : false}
+            disabled={loading}
           >
             UPLOAD
           </button>
