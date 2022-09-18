@@ -1,0 +1,56 @@
+{
+  "rules": {
+    // ".read": "now < 1666018800000",  // 2022-10-18
+    // ".write": "now < 1666018800000",  // 2022-10-18
+    "chatRooms": {
+      ".read": "auth != null",
+      "$chatRoomId": {
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['id', 'name', 'createBy', 'description'])",
+        "id": {
+          ".validate": "newData.val() === $chatRoomId"
+        },
+        "name": {
+          ".validate": "newData.val().length > 0"
+        },
+        "description": {
+          ".validate": "newData.val().length > 0"
+        }
+      }
+    },
+    "messages": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "content": {
+        ".validate": "newData.val().length > 0"
+      },
+      "image": {
+        ".validate": "newData.val().length > 0"
+      },
+      "user": {
+        ".validate": "newData.hasChildren(['id', 'name', 'image'])"
+      }
+    },
+    "presence": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+    },
+    "typing": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+    },
+    "users": {
+      ".read": "auth != null",
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['name', 'image'])",
+        "name": {
+        	".validate": "newData.val().length > 0"
+        },
+        "image": {
+          ".validate": "newData.val().length > 0"
+        },
+      }
+    }
+  }
+}
