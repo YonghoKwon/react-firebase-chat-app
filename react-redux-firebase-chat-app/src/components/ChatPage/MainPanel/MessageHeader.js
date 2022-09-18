@@ -14,6 +14,7 @@ import { MdFavorite, MdFavoriteBorder } from 'react-icons/md';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { useSelector } from 'react-redux';
 import firebase from '../../../firebase';
+import Media from "react-bootstrap/Media";
 
 function MessageHeader({ handleSearchChange }) {
   const chatRoom = useSelector(state => state.chatRoom.currentChatRoom)
@@ -21,6 +22,7 @@ function MessageHeader({ handleSearchChange }) {
   const [ isFavorited, setIsFavorited ] = useState(false);
   const usersRef = firebase.database().ref("users");
   const user = useSelector(state => state.user.currentUser);
+  const userPosts = useSelector(state => state.chatRoom.userPosts)
 
   useEffect(() => {
     if (chatRoom && user) {
@@ -51,7 +53,8 @@ function MessageHeader({ handleSearchChange }) {
           if (err !== null) {
             console.error(err);
           }
-        })
+        }).then( () => console.log("isFavorited is true") )
+
       setIsFavorited(prev => !prev)
     } else {
       usersRef
@@ -68,6 +71,28 @@ function MessageHeader({ handleSearchChange }) {
       setIsFavorited(prev => !prev)
     }
   }
+
+  const renderUserPosts = (userPosts) =>
+    Object.entries(userPosts)
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([key, val], i) => (
+        <Media key={i}>
+          <img
+            style={{ borderRadius: 25 }}
+            width={48}
+            height={48}
+            className="mr-3"
+            src={val.image}
+            alt={val.name}
+          />
+          <Media.Body>
+            <h6>{key}</h6>
+            <p>
+              {val.count} 개
+            </p>
+          </Media.Body>
+        </Media>
+      ))
 
   return (
     <div style={{
@@ -117,7 +142,9 @@ function MessageHeader({ handleSearchChange }) {
         </Row>
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <p>
-            <Image src="" /> {" "}user name
+            <Image src={chatRoom && chatRoom.createdBy.image}
+              roundedCircle style={{ width: '30px', height: '30px' }}
+            /> {" "} {chatRoom && chatRoom.createdBy.name}
           </p>
         </div>
         <Row>
@@ -126,11 +153,13 @@ function MessageHeader({ handleSearchChange }) {
               <Card>
                 <Card.Header style={{ padding: '0 1rem' }}>
                   <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                    Click me!
+                    Description
                   </Accordion.Toggle>
                 </Card.Header>
                 <Accordion.Collapse eventKey="0">
-                  <Card.Body>Hello! I'm the body</Card.Body>
+                  <Card.Body>
+                    {chatRoom && chatRoom.description}
+                  </Card.Body>
                 </Accordion.Collapse>
               </Card>
             </Accordion>
@@ -140,11 +169,13 @@ function MessageHeader({ handleSearchChange }) {
               <Card>
                 <Card.Header style={{ padding: '0 1rem' }}>
                   <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                    Click me!
+                    Posts Count
                   </Accordion.Toggle>
                 </Card.Header>
                 <Accordion.Collapse eventKey="0">
-                  <Card.Body>Hello! I'm the body</Card.Body>
+                  <Card.Body>
+                    {userPosts && renderUserPosts(userPosts)}
+                  </Card.Body>
                 </Accordion.Collapse>
               </Card>
             </Accordion>
