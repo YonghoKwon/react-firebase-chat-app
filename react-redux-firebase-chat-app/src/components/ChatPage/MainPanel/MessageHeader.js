@@ -36,8 +36,6 @@ function MessageHeader({ handleSearchChange }) {
       .then(data => {
         if (data.val() !== null) {
           const chatRoomIds = Object.keys(data.val());
-          // console.log('data.val()', data.val())
-          // console.log('chatRoomIds', chatRoomIds)
           const isAlreadyFavorited = chatRoomIds.includes(chatRoomId)
           setIsFavorited(isAlreadyFavorited)
         }
@@ -92,11 +90,11 @@ function MessageHeader({ handleSearchChange }) {
               {chatRoom && chatRoom.name}
               {!isPrivateChatRoom &&
                 <span style={{ cursor: 'pointer' }} onClick={handleFavorite}>
-                                    {isFavorited ?
-                                      <MdFavorite style={{ marginBottom: '10px' }} />
-                                      :
-                                      <MdFavoriteBorder style={{ marginBottom: '10px' }} />
-                                    }
+                  {isFavorited ?
+                    <MdFavorite style={{ marginBottom: '10px' }} />
+                    :
+                    <MdFavoriteBorder style={{ marginBottom: '10px' }} />
+                  }
                 </span>
               }
             </h2>
