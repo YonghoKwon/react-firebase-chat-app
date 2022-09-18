@@ -118,13 +118,20 @@ function MessageForm() {
     }
   }
 
-  const handleKeyDown = () => {
+  const handleKeyDown = (event) => {
+    if (event.ctrlKey && event.keyCode === 13) {
+      handleSubmit()
+        .then(() => console.log("enter handleSubmit"));
+    }
+  }
+
+  const handleKeyUp = () => {
     if (content) {
       typingRef.child(chatRoom.id).child(user.uid).set(user.displayName)
-        .then( () => console.log("set Typing state"))
+        .then( () => console.log("set Typing state"));
     } else {
       typingRef.child(chatRoom.id).child(user.uid).remove()
-        .then( () => console.log("remove Typing state"))
+        .then( () => console.log("remove Typing state"));
     }
   }
 
@@ -133,7 +140,8 @@ function MessageForm() {
       <Form onSubmit={handleSubmit}>
         <Form.Group controlId="exampleForm.ControlTextarea1">
           <Form.Control
-            onKeyUp={handleKeyDown}
+            onKeyDown={handleKeyDown}
+            onKeyUp={handleKeyUp}
             value={content}
             onChange={handleChange}
             as="textarea"
