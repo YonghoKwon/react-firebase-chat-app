@@ -14,7 +14,7 @@ import { MdFavorite, MdFavoriteBorder } from 'react-icons/md';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { useSelector } from 'react-redux';
 import firebase from '../../../firebase';
-import Media from "react-bootstrap/Media";
+import { Media } from 'react-bootstrap';
 
 function MessageHeader({ handleSearchChange }) {
   const chatRoom = useSelector(state => state.chatRoom.currentChatRoom)
