@@ -9,7 +9,6 @@ import firebase from '../../../firebase';
 import { setCurrentChatRoom } from '../../../redux/actions/chatRoom_action';
 
 export class ChatRooms extends Component {
-
     state = {
         show: false,
         name: "",
