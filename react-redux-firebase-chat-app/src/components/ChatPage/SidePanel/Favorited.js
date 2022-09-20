@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import { FaRegSmileBeam } from 'react-icons/fa';
-import firebase from '../../../firebase';
+import { FcLike } from 'react-icons/fc';
+import { child, getDatabase, ref, onChildAdded, onChildRemoved, off } from "firebase/database";
 import { connect } from 'react-redux';
 import {
   setCurrentChatRoom,
@@ -10,7 +10,7 @@ import {
 export class Favorited extends Component {
   state = {
     favoritedChatRooms: [],
-    usersRef: firebase.database().ref("users"),
+    userRef: ref(getDatabase(), 'users'),
     activeChatRoomId: ''
   }
 
@@ -27,34 +27,27 @@ export class Favorited extends Component {
   }
 
   removeListener = (userId) => {
-    this.state.usersRef.child(`${userId}/favorited`).off();
+    const { userRef } = this.state;
+    off(child(userRef, `${userId}/favoried`));
   }
 
   addListeners = (userId) => {
-    const { usersRef } = this.state;
+    const { userRef } = this.state;
 
-    usersRef
-      .child(userId)
-      .child("favorited")
-      .on("child_added", DataSnapshot => {
-        const favoritedChatRoom = { id: DataSnapshot.key, ...DataSnapshot.val() }
-
-        this.setState({
-          favoritedChatRooms: [...this.state.favoritedChatRooms, favoritedChatRoom]
-        })
+    onChildAdded(child(userRef, `${userId}/favorited`), DataSnapshot => {
+      const favoritedChatRoom = { id: DataSnapshot.key, ...DataSnapshot.val() }
+      this.setState({
+        favoritedChatRooms: [...this.state.favoritedChatRooms, favoritedChatRoom]
       })
+    })
 
-    usersRef
-      .child(userId)
-      .child("favorited")
-      .on("child_removed", DataSnapshot => {
-        const chatRoomToRemove = { id: DataSnapshot.key, ...DataSnapshot.val() };
-        const filteredChatRooms = this.state.favoritedChatRooms.filter(chatRoom => {
-          return chatRoom.id !== chatRoomToRemove.id;
-        })
-
-        this.setState({ favoritedChatRooms: filteredChatRooms })
+    onChildRemoved(child(userRef, `${userId}/favorited`), DataSnapshot => {
+      const chatRoomToRemove = { id: DataSnapshot.key, ...DataSnapshot.val() };
+      const filteredChatRooms = this.state.favoritedChatRooms.filter(chatRoom => {
+        return chatRoom.id !== chatRoomToRemove.id;
       })
+      this.setState({ favoritedChatRooms: filteredChatRooms })
+    })
   }
 
   changeChatRoom = (room) => {
@@ -83,8 +76,8 @@ export class Favorited extends Component {
     return (
       <div>
         <span style={{ display: 'flex', alignItems: 'center' }}>
-          <FaRegSmileBeam style={{ marginRight: '3px' }} />
-          FAVORITED (1)
+          <FcLike style={{ marginRight: '3px' }} />
+          FAVORITED ({favoritedChatRooms.length})
         </span>
         <ul style={{ listStyleType: 'none', padding: '0' }}>
           {this.renderFavoritedChatRooms(favoritedChatRooms)}

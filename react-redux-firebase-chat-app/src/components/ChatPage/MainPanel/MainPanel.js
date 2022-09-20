@@ -3,7 +3,7 @@ import MessageHeader from './MessageHeader';
 import Message from './Message';
 import MessageForm from './MessageForm';
 import { connect } from 'react-redux';
-import firebase from '../../../firebase';
+import { getDatabase, ref, onChildAdded, onChildRemoved, child, off } from "firebase/database";
 import {setUserPosts} from '../../../redux/actions/chatRoom_action';
 import Skeleton from '../../../commons/components/Skeleton';
 
@@ -12,12 +12,12 @@ export class MainPanel extends Component {
 
   state = {
     messages: [],
-    messagesRef: firebase.database().ref("messages"),
+    messagesRef: ref(getDatabase(), "messages"),
     messagesLoading: true,
     searchTerm: "",
     searchResults: [],
     searchLoading: false,
-    typingRef: firebase.database().ref("typing"),
+    typingRef: ref(getDatabase(), "typing"),
     typingUsers: [],
     listenerLists: []
   }
@@ -38,42 +38,42 @@ export class MainPanel extends Component {
   }
 
   componentWillUnmount() {
-    this.state.messagesRef.off();
+    off(this.state.messagesRef);
     this.removeListeners(this.state.listenerLists);
   }
 
   removeListeners = (listeners) => {
     listeners.forEach(listner => {
-      listner.ref.child(listner.id).off(listner.event)
+      off(ref(getDatabase(), `messages/${listner.id}`), listner.event);
     })
   }
 
   addTypingListeners = (chatRoomId) => {
     let typingUsers = [];
     // typing이 새로 들어올 때
-    this.state.typingRef.child(chatRoomId).on("child_added",
-      DataSnapshot => {
-        if (DataSnapshot.key !== this.props.user.uid) {
-          typingUsers = typingUsers.concat({
-            id: DataSnapshot.key,
-            name: DataSnapshot.val()
-          });
-          this.setState({ typingUsers })
-        }
-      })
+    let { typingRef } = this.state;
+
+    onChildAdded(child(typingRef, chatRoomId), DataSnapshot => {
+      if (DataSnapshot.key !== this.props.user.uid) {
+        typingUsers = typingUsers.concat({
+          id: DataSnapshot.key,
+          name: DataSnapshot.val()
+        });
+        this.setState({ typingUsers })
+      }
+    })
 
     // listenersList state에 등록된 리스너 추가
     this.addToListenerLists(chatRoomId, this.state.typingRef, "child_added")
 
     // typing을 지워줄 때
-    this.state.typingRef.child(chatRoomId).on("child_removed",
-      DataSnapshot => {
-        const index = typingUsers.findIndex(user => user.id === DataSnapshot.key);
-        if (index !== -1) {
-          typingUsers = typingUsers.filter(user => user.id !== DataSnapshot.key);
-          this.setState({ typingUsers })
-        }
-      })
+    onChildRemoved(child(typingRef, chatRoomId), DataSnapshot => {
+      const index = typingUsers.findIndex(user => user.id === DataSnapshot.key);
+      if (index !== -1) {
+        typingUsers = typingUsers.filter(user => user.id !== DataSnapshot.key);
+        this.setState({ typingUsers })
+      }
+    })
 
     // listenersList state에 등록된 리스너 추가
     this.addToListenerLists(chatRoomId, this.state.typingRef, "child_removed")
@@ -123,9 +123,10 @@ export class MainPanel extends Component {
 
   addMessagesListeners = (chatRoomId) => {
     let messagesArray = [];
-    this.state.messagesRef.child(chatRoomId).on("child_added", DataSnapshot => {
+    let { messagesRef } = this.state;
+
+    onChildAdded(child(messagesRef, chatRoomId), DataSnapshot => {
       messagesArray.push(DataSnapshot.val());
-      console.log('messageAre', messagesArray)
       this.setState({
         messages: messagesArray,
         messagesLoading: false
@@ -159,11 +160,14 @@ export class MainPanel extends Component {
       />
     ))
 
-  renderTypingUsers = (typingUsers) =>
-    typingUsers.length > 0 &&
-    typingUsers.map(user => (
-      <span>{user.name}님이 채팅을 입력 중 입니다...</span>
-    ))
+  renderTypingUsers = (typingUsers) => {
+    return (
+      typingUsers.length > 0 &&
+      typingUsers.map(user => (
+        <span>{user.name}님이 채팅을 입력 중 입니다...</span>
+      ))
+    )
+  }
 
   renderMessageSkeleton = (loading) =>
     loading && (

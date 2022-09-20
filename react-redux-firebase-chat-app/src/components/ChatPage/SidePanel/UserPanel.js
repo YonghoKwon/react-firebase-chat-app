@@ -1,95 +1,144 @@
-import React, { useRef } from 'react'
-import { IoIosChatboxes } from 'react-icons/io';
+import React, {useRef} from 'react'
+import {IoIosChatboxes} from 'react-icons/io';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Image from 'react-bootstrap/Image';
-import { useDispatch, useSelector } from 'react-redux';
-import firebase from '../../../firebase';
-import mime from 'mime-types';
-import { setPhotoURL } from '../../../redux/actions/user_action';
+import {useDispatch, useSelector} from 'react-redux';
+import {getDatabase, ref, child, update} from "firebase/database";
+import {getAuth, signOut, updateProfile} from "firebase/auth";
+import {getStorage, ref as strRef, getDownloadURL, uploadBytesResumable} from "firebase/storage";
+import {setPhotoURL} from '../../../redux/actions/user_action';
+import { initializeApp } from 'firebase/app'
 
 function UserPanel() {
-    const user = useSelector(state => state.user.currentUser)
-    const dispatch = useDispatch();
-    const inputOpenImageRef = useRef();
+  let firebaseConfig = {
+    apiKey: "AIzaSyBZooInpw9dvQ_qg-seazvM-2K3bAfUAV8",
+    authDomain: "react-redux-firebase-cha-1a50f.firebaseapp.com",
+    databaseURL: "https://react-redux-firebase-cha-1a50f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "react-redux-firebase-cha-1a50f",
+    storageBucket: "react-redux-firebase-cha-1a50f.appspot.com",
+    messagingSenderId: "967222648992",
+    appId: "1:967222648992:web:affe50e93964914ba7e9c5",
+    measurementId: "G-GZYPVZLGSX"
+  };
+  const user = useSelector(state => state.user.currentUser)
+  const dispatch = useDispatch();
+  const inputOpenImageRef = useRef();
 
-    const handleLogout = () => {
-        firebase.auth().signOut().then( () => console.log("signOut complete") );
-    }
+  const handleLogout = () => {
+    let app = initializeApp(firebaseConfig);
+    let auth = getAuth(app);
+    signOut(auth).then(() => {
+      // Sign-out successful.
+    }).catch((error) => {
+      // An error happened.
+    });
+  }
 
-    const handleOpenImageRef = () => {
-        inputOpenImageRef.current.click();
-    }
+  const handleOpenImageRef = () => {
+    inputOpenImageRef.current.click();
+  }
 
-    const handleUploadImage = async (event) => {
-        const file = event.target.files[0];
-        const metadata = { contentType: mime.lookup(file.name) };
+  const handleUploadImage = async (event) => {
+    const file = event.target.files[0];
+    let app = initializeApp(firebaseConfig);
+    let auth = getAuth(app);
+    const user = auth.currentUser;
 
-        try {
-            // Save the image in storage
-            let uploadTaskSnapshot = await firebase.storage().ref()
-                .child(`user_image/${user.uid}`)
-                .put(file, metadata)
+    const metadata = {contentType: file.type};
+    const storage = getStorage();
+    // https://firebase.google.com/docs/storage/web/upload-files#full_example
 
-            console.log('uploadTaskSnapshot', uploadTaskSnapshot);
+    try {
+      //스토리지에 파일 저장하기
+      let uploadTask = uploadBytesResumable(strRef(storage, `user_image/${user.uid}`), file, metadata)
 
-            let downloadURL = await uploadTaskSnapshot.ref.getDownloadURL();
-
-            // Change profile image
-            await firebase.auth().currentUser.updateProfile({
-                photoURL: downloadURL
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload is ' + progress + '% done');
+          switch (snapshot.state) {
+            case 'paused':
+              console.log('Upload is paused');
+              break;
+            case 'running':
+              console.log('Upload is running');
+              break;
+          }
+        },
+        (error) => {
+          // A full list of error codes is available at
+          // https://firebase.google.com/docs/storage/web/handle-errors
+          switch (error.code) {
+            case 'storage/unauthorized':
+              // User doesn't have permission to access the object
+              break;
+            case 'storage/canceled':
+              // User canceled the upload
+              break;
+            case 'storage/unknown':
+              // Unknown error occurred, inspect error.serverResponse
+              break;
+          }
+        },
+        () => {
+          // Upload completed successfully, now we can get the download URL
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            // 프로필 이미지 수정
+            updateProfile(user, {
+              photoURL: downloadURL
             })
 
             dispatch(setPhotoURL(downloadURL))
 
-            // Change user image
-            await firebase.database().ref("users")
-                .child(user.uid)
-                .update({ image: downloadURL })
-
-        } catch (error) {
-            alert(error)
+            //데이터베이스 유저 이미지 수정
+            update(ref(getDatabase(), `users/${user.uid}`), {image: downloadURL})
+          });
         }
+      );
+      // console.log('uploadTaskSnapshot', uploadTaskSnapshot)
+    } catch (error) {
+      alert(error)
     }
+  }
 
-    return (
-        <div>
-            {/* Logo */}
-            <h3 style={{ color: 'white' }}>
-                <IoIosChatboxes />{" "} Chat App
-            </h3>
+  return (
+    <div>
+      {/* Logo */}
+      <h3 style={{color: 'black'}}>
+        <IoIosChatboxes/>{" "} Messenger
+      </h3>
 
-            <div style={{ display: 'flex', marginBottom: '1rem' }}>
-                <Image src={user && user.photoURL}
-                    style={{ width: '30p', height: '30px', marginTop: '3px' }}
-                    roundedCircle />
+      <div style={{display: 'flex', marginBottom: '1rem'}}>
+        <Image src={user && user.photoURL} style={{width: '30p', height: '30px', marginTop: '3px'}} roundedCircle/>
 
-                <Dropdown>
-                    <Dropdown.Toggle
-                        style={{ background: 'transparent', boder: '0px' }}
-                        id="dropdown-basic">
-                        {user && user.displayName}
-                    </Dropdown.Toggle>
+        <Dropdown>
+          <Dropdown.Toggle
+            style={{background: 'transparent', boder: '0px'}}
+            id="dropdown-basic">
+            {user && user.displayName}
+          </Dropdown.Toggle>
 
-                    <Dropdown.Menu>
-                        <Dropdown.Item onClick={handleOpenImageRef}>
-                            프로필 사진 변경
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={handleLogout}>
-                            로그아웃
-                        </Dropdown.Item>
-                    </Dropdown.Menu>
-                </Dropdown>
-            </div>
+          <Dropdown.Menu>
+            <Dropdown.Item onClick={handleOpenImageRef}>
+              프로필 사진 변경
+            </Dropdown.Item>
+            <Dropdown.Item onClick={handleLogout}>
+              로그아웃
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
 
-            <input
-                onChange={handleUploadImage}
-                accept="image/jpeg, image/png"
-                style={{ display: 'none' }}
-                ref={inputOpenImageRef}
-                type="file"
-            />
-        </div>
-    )
+      <input
+        onChange={handleUploadImage}
+        accept="image/jpeg, image/png"
+        style={{display: 'none'}}
+        ref={inputOpenImageRef}
+        type="file"
+      />
+    </div>
+  )
 }
 
 export default UserPanel

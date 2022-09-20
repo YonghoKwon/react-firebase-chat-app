@@ -1,8 +1,7 @@
 import React from 'react'
-import Media from 'react-bootstrap/Media';
 import moment from 'moment';
 
-function Message({ message, user }) {
+function Message({message, user}) {
   const timeFromNow = timestamp => moment(timestamp).fromNow();
 
   const isImage = message => {
@@ -10,62 +9,66 @@ function Message({ message, user }) {
   }
 
   const isMessageMine = (message, user) => {
-    if(user) {
+    if (user) {
       return message.user.id === user.uid
     }
   }
 
-  return (
-    <Media style={{ marginBottom: '3px' }}>
-      {isMessageMine(message, user) ?
-        <>
-        </>
-        :
-        <img
-          style={{
-            borderRadius: '10px',
+  const myMessageStyle = {
+    marginBottom: '3px',
+    display: 'flex',
+    flexDirection: 'row-reverse',
+  }
 
-          }}
-          width={48}
-          height={48}
-          className="mr-3"
-          src={message.user.image}
-          alt={message.user.name}
-        />
+  const anotherMessageStyle = {
+    marginBottom: '3px',
+    display: 'flex',
+  }
+
+  return (
+    // 다른 사람 메세지
+    <div style={
+      isMessageMine(message, user) ?
+        myMessageStyle
+        :
+        anotherMessageStyle
+    }
+    >
+      {
+        isMessageMine(message, user) ?
+          <>
+          </>
+          :
+          <img
+            style={{
+              borderRadius: '10px',
+            }}
+            width={48}
+            height={48}
+            className="mr-3"
+            src={message.user.image}
+            alt={message.user.name}
+          />
       }
-      <Media.Body style={{
-        backgroundColor: isMessageMine(message, user) && "#ECECEC",
-        textAlign: isMessageMine(message, user) && "right",
+
+
+      <div style={{
+        backgroundColor: isMessageMine(message, user) && "#ECECEC"
       }}>
         <h6>{message.user.name}{" "}
-          <span style={{ fontSize: '10px', color: 'gray' }}>
+          <span style={{fontSize: '10px', color: 'gray'}}>
                         {timeFromNow(message.timestamp)}
                     </span>
         </h6>
         {isImage(message) ?
-          <img style={{ maxWidth: '300px' }} alt="이미지" src={message.image} />
+          <img style={{maxWidth: '300px'}} alt="이미지" src={message.image}/>
           :
           <p>
             {message.content}
           </p>
         }
-      </Media.Body>
-      {isMessageMine(message, user) ?
-        <img
-          style={{
-            borderRadius: '10px'
-          }}
-          width={48}
-          height={48}
-          className="mr-3"
-          src={message.user.image}
-          alt={message.user.name}
-        />
-        :
-        <>
-        </>
-      }
-    </Media>
+      </div>
+    </div>
   )
 }
 

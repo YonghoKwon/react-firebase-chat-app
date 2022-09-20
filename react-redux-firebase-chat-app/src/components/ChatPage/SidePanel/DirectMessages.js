@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import { FaRegSmile } from 'react-icons/fa';
-import firebase from '../../../firebase';
+import { FcPrivacy } from 'react-icons/fc';
+import { getDatabase, ref, onChildAdded } from "firebase/database";
 import { connect } from 'react-redux';
 import {
   setCurrentChatRoom, setPrivateChatRoom
@@ -8,7 +8,7 @@ import {
 
 export class DirectMessages extends Component {
   state = {
-    usersRef: firebase.database().ref("users"),
+    usersRef: ref(getDatabase(), "users"),
     users: [],
     activeChatRoom: ""
   }
@@ -22,7 +22,7 @@ export class DirectMessages extends Component {
   addUsersListeners = (currentUserId) => {
     const { usersRef } = this.state;
     let usersArray = [];
-    usersRef.on("child_added", DataSnapshot => {
+    onChildAdded(usersRef,  DataSnapshot => {
       if (currentUserId !== DataSnapshot.key) {
         let user = DataSnapshot.val();
         user["uid"] = DataSnapshot.key;
@@ -76,7 +76,7 @@ export class DirectMessages extends Component {
     return (
       <div>
         <span style={{ display: 'flex', alignItems: 'center' }}>
-            <FaRegSmile style={{ marginRight: 3 }} />  DIRECT MESSAGES(1)
+            <FcPrivacy style={{ marginRight: 3 }} />  DIRECT MESSAGES({users.length})
         </span>
 
         <ul style={{ listStyleType: 'none', padding: 0 }}>

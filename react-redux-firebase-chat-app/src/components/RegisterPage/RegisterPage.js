@@ -1,12 +1,23 @@
 import React, { useRef, useState } from 'react'
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import firebase from '../../firebase';
+import { getDatabase, ref, set } from "firebase/database";
+import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import md5 from 'md5';
+import { initializeApp } from 'firebase/app'
 
 function RegisterPage() {
-
-  const { register, watch, errors, handleSubmit } = useForm();
+  let firebaseConfig = {
+    apiKey: "AIzaSyBZooInpw9dvQ_qg-seazvM-2K3bAfUAV8",
+    authDomain: "react-redux-firebase-cha-1a50f.firebaseapp.com",
+    databaseURL: "https://react-redux-firebase-cha-1a50f-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "react-redux-firebase-cha-1a50f",
+    storageBucket: "react-redux-firebase-cha-1a50f.appspot.com",
+    messagingSenderId: "967222648992",
+    appId: "1:967222648992:web:affe50e93964914ba7e9c5",
+    measurementId: "G-GZYPVZLGSX"
+  };
+  const { register, watch, formState: { errors }, handleSubmit } = useForm();
   const [ errorFromSubmit, setErrorFromSubmit ] = useState("");
   const [ loading, setLoading ] = useState(false);
 
@@ -17,19 +28,19 @@ function RegisterPage() {
 
     try {
       setLoading(true)
-      let createdUser = await firebase
-        .auth()
-        .createUserWithEmailAndPassword(data.email, data.password)
+      let app = initializeApp(firebaseConfig);
+      let auth = getAuth(app);
+      let createdUser = await createUserWithEmailAndPassword(auth, data.email, data.password)
       console.log('createdUser : ', createdUser)
 
       // Add to displayName, photoURL
-      await createdUser.user.updateProfile({
+      await updateProfile(auth.currentUser, {
         displayName: data.name,
         photoURL: `http://gravatar.com/avatar/${md5(createdUser.user.email)}?d=identicon`
       })
 
       // Save in Firebase realtime database (users table[ref])
-      await firebase.database().ref("users").child(createdUser.user.uid).set({
+      await set(ref(getDatabase(), `users/${createdUser.user.uid}`), {
         name: createdUser.user.displayName,
         image: createdUser.user.photoURL
       })
@@ -54,14 +65,14 @@ function RegisterPage() {
         <input
           name="email"
           type="email"
-          ref={register({ required: true, pattern: /^\S+@\S+$/i })}
+          {...register("email", { required: true, pattern: /^\S+@\S+$/i })}
         />
         {errors.email && <p>This email field is required</p>}
 
         <label>Name</label>
         <input
           name="name"
-          ref={register({ required: true, maxLength: 10 })}
+          {...register("name", { required: true, maxLength: 10 })}
         />
         {errors.name && errors.name.type === "required" && <p>This name field is required</p>}
         {errors.name && errors.name.type === "maxLength" && <p>Your input exceed maximum length</p>}
@@ -70,7 +81,7 @@ function RegisterPage() {
         <input
           name="password"
           type="password"
-          ref={register({ required: true, minLength: 6 })}
+          {...register("password", { required: true, minLength: 6 })}
         />
         {errors.password && errors.password.type === "required" && <p>This password field is required</p>}
         {errors.password && errors.password.type === "minLength" && <p>Password must have at least 6 characters</p>}
@@ -79,7 +90,7 @@ function RegisterPage() {
         <input
           name="password_confirm"
           type="password"
-          ref={register({
+          {...register("password_confirm", {
             required: true,
             validate: (value) =>
               value === password.current
@@ -93,7 +104,7 @@ function RegisterPage() {
         }
 
         <input type="submit" disabled={loading} />
-        <Link style={{ color: 'gray', textDecoration: 'none' }} to="login">이미 아이디가 있다면...  </Link>
+        <Link style={{ color: 'gray', textDecoration: 'none' }} to="/login">이미 아이디가 있다면...  </Link>
       </form>
     </div>
   )
