@@ -1,12 +1,12 @@
 import React, { Component } from 'react'
-import { FaRegSmileWink } from 'react-icons/fa';
+import { FcSms } from 'react-icons/fc';
 import { FaPlus } from 'react-icons/fa';
 import Modal from 'react-bootstrap/Modal';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Badge from 'react-bootstrap/Badge';
 import { connect } from 'react-redux';
-import firebase from '../../../firebase';
+import { getDatabase, ref, onChildAdded, onValue, push, child, update, off } from "firebase/database";
 import { setCurrentChatRoom, setPrivateChatRoom } from '../../../redux/actions/chatRoom_action';
 
 export class ChatRooms extends Component {
@@ -14,8 +14,8 @@ export class ChatRooms extends Component {
         show: false,
         name: "",
         description: "",
-        chatRoomsRef: firebase.database().ref("chatRooms"),
-        messagesRef: firebase.database().ref("messages"),
+        chatRoomsRef: ref(getDatabase(), "chatRooms"),
+        messagesRef: ref(getDatabase(), "messages"),
         chatRooms: [],
         firstLoad: true,
         activeChatRoomId: "",
@@ -27,10 +27,10 @@ export class ChatRooms extends Component {
     }
 
     componentWillUnmount() {
-        this.state.chatRoomsRef.off();
+        off(this.state.chatRoomsRef);
 
         this.state.chatRooms.forEach(chatRoom => {
-            this.state.messagesRef.child(chatRoom.id).off();
+            off(child(this.state.messagesRef,chatRoom.id));
         });
     }
 
@@ -46,7 +46,7 @@ export class ChatRooms extends Component {
     AddChatRoomsListeners = () => {
         let chatRoomsArray = [];
 
-        this.state.chatRoomsRef.on("child_added", DataSnapshot => {
+        onChildAdded(this.state.chatRoomsRef, DataSnapshot => {
             chatRoomsArray.push(DataSnapshot.val());
             this.setState({ chatRooms: chatRoomsArray },
                 () => this.setFirstChatRoom());
@@ -55,7 +55,8 @@ export class ChatRooms extends Component {
     }
 
     addNotificationListener = (chatRoomId) => {
-        this.state.messagesRef.child(chatRoomId).on("value", DataSnapshot => {
+        let { messagesRef } = this.state;
+        onValue(child(messagesRef, chatRoomId), DataSnapshot => {
             if (this.props.chatRoom) {
                 this.handleNotification(
                     chatRoomId,
@@ -77,8 +78,8 @@ export class ChatRooms extends Component {
         if (index === -1) {
             notifications.push({
                 id: chatRoomId,
-                total: DataSnapshot.numChildren(),
-                lastKnownTotal: DataSnapshot.numChildren(),
+                total: DataSnapshot.size,
+                lastKnownTotal: DataSnapshot.size,
                 count: 0
             })
         }
@@ -92,12 +93,12 @@ export class ChatRooms extends Component {
                 // count (알림으로 보여줄 숫자)를 구하기
                 // 현재 총 메시지 개수 - 이전에 확인한 총 메시지 개수 > 0
                 // 현재 총 메시지 개수가 10개이고 이전에 확인한 메시지가 8개 였다면 2개를 알림으로 보여줘야함.
-                if (DataSnapshot.numChildren() - lastTotal > 0) {
-                    notifications[index].count = DataSnapshot.numChildren() - lastTotal;
+                if (DataSnapshot.size - lastTotal > 0) {
+                    notifications[index].count = DataSnapshot.size - lastTotal;
                 }
             }
             // total property에 현재 전체 메시지 개수를 넣어주기
-            notifications[index].total = DataSnapshot.numChildren();
+            notifications[index].total = DataSnapshot.size;
         }
         // 목표는 방 하나 하나의 맞는 알림 정보를 notifications state에  넣어주기
         this.setState({ notifications })
@@ -117,7 +118,7 @@ export class ChatRooms extends Component {
 
     addChatRoom = async () => {
         // Generate auto-generated key
-        const key = this.state.chatRoomsRef.push().key;
+        const key = push(this.state.chatRoomsRef).key;
         const { name, description } = this.state;
         const { user } = this.props;
         const newChatRoom = {
@@ -131,7 +132,7 @@ export class ChatRooms extends Component {
         }
 
         try {
-            await this.state.chatRoomsRef.child(key).update(newChatRoom)
+            await update(child(this.state.chatRoomsRef, key), newChatRoom)
             this.setState({
                 name: "",
                 description: "",
@@ -204,8 +205,8 @@ export class ChatRooms extends Component {
                     position: 'relative', width: '100%',
                     display: 'flex', alignItems: 'center'
                 }}>
-                    <FaRegSmileWink style={{ marginRight: 3 }} />
-                    CHAT ROOMS {" "} (1)
+                    <FcSms style={{ marginRight: 3 }} />
+                    CHAT ROOMS {" "} ({this.state.chatRooms.length})
 
                     <FaPlus
                         onClick={this.handleShow}

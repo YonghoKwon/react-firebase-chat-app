@@ -13,14 +13,13 @@ import { FaLockOpen } from 'react-icons/fa';
 import { MdFavorite, MdFavoriteBorder } from 'react-icons/md';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { useSelector } from 'react-redux';
-import firebase from '../../../firebase';
-import { Media } from 'react-bootstrap';
+import { getDatabase, ref, onValue, remove, child, update } from "firebase/database";
 
 function MessageHeader({ handleSearchChange }) {
   const chatRoom = useSelector(state => state.chatRoom.currentChatRoom)
   const isPrivateChatRoom = useSelector(state => state.chatRoom.isPrivateChatRoom)
   const [ isFavorited, setIsFavorited ] = useState(false);
-  const usersRef = firebase.database().ref("users");
+  const usersRef = ref(getDatabase(), "users");
   const user = useSelector(state => state.user.currentUser);
   const userPosts = useSelector(state => state.chatRoom.userPosts)
 
@@ -31,34 +30,24 @@ function MessageHeader({ handleSearchChange }) {
   }, [])
 
   const addFavoriteListener = (chatRoomId, userId) => {
-    usersRef
-      .child(userId)
-      .child("favorited")
-      .once("value")
-      .then(data => {
-        if (data.val() !== null) {
-          const chatRoomIds = Object.keys(data.val());
-          const isAlreadyFavorited = chatRoomIds.includes(chatRoomId)
-          setIsFavorited(isAlreadyFavorited)
-        }
-      })
+    onValue(child(usersRef, `${userId}/favorited`), data => {
+      if (data.val() !== null) {
+        const chatRoomIds = Object.keys(data.val());
+        const isAlreadyFavorited = chatRoomIds.includes(chatRoomId)
+        setIsFavorited(isAlreadyFavorited)
+      }
+    })
   }
 
   const handleFavorite = () => {
     if (isFavorited) {
-      usersRef
-        .child(`${user.uid}/favorited`)
-        .child(chatRoom.id)
-        .remove(err => {
-          if (err !== null) {
-            console.error(err);
-          }
-        }).then( () => console.log("isFavorited is true > false") )
-
       setIsFavorited(prev => !prev)
+
+      remove(child(usersRef, `${user.uid}/favorited/${chatRoom.id}`))
+        .then( () => console.log("isFavorited is true > false") )
     } else {
-      usersRef
-        .child(`${user.uid}/favorited`).update({
+      setIsFavorited(prev => !prev)
+      update(child(usersRef, `${user.uid}/favorited`), {
         [chatRoom.id]: {
           name: chatRoom.name,
           description: chatRoom.description,
@@ -68,8 +57,6 @@ function MessageHeader({ handleSearchChange }) {
           }
         }
       }).then( () => console.log("isFavorited is false > true") )
-
-      setIsFavorited(prev => !prev)
     }
   }
 
@@ -77,7 +64,7 @@ function MessageHeader({ handleSearchChange }) {
     Object.entries(userPosts)
       .sort((a, b) => b[1].count - a[1].count)
       .map(([key, val], i) => (
-        <Media key={i}>
+        <div key={i}>
           <img
             style={{ borderRadius: 25 }}
             width={48}
@@ -86,19 +73,19 @@ function MessageHeader({ handleSearchChange }) {
             src={val.image}
             alt={val.name}
           />
-          <Media.Body>
+          <div>
             <h6>{key}</h6>
             <p>
               {val.count} 개
             </p>
-          </Media.Body>
-        </Media>
+          </div>
+        </div>
       ))
 
   return (
     <div style={{
       width: '100%',
-      height: '170px',
+      height: '130px',
       border: '.2rem solid #ececec',
       borderRadius: '4px',
       padding: '1rem',
@@ -127,11 +114,9 @@ function MessageHeader({ handleSearchChange }) {
           </Col>
           <Col>
             <InputGroup className="mb-3">
-              <InputGroup.Prepend>
                 <InputGroup.Text id="basic-addon1">
                   <AiOutlineSearch />
                 </InputGroup.Text>
-              </InputGroup.Prepend>
               <FormControl
                 onChange={handleSearchChange}
                 placeholder="Search Messages"
@@ -150,40 +135,32 @@ function MessageHeader({ handleSearchChange }) {
             </p>
           </div>
         }
-        <Row>
+        {/*<Row>
           <Col>
             <Accordion>
-              <Card>
-                <Card.Header style={{ padding: '0 1rem' }}>
-                  <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                    Description
-                  </Accordion.Toggle>
-                </Card.Header>
+              <Accordion.Item eventKey="0">
+                <Accordion.Header>Description</Accordion.Header>
                 <Accordion.Collapse eventKey="0">
                   <Card.Body>
                     {chatRoom && chatRoom.description}
                   </Card.Body>
                 </Accordion.Collapse>
-              </Card>
+              </Accordion.Item>
             </Accordion>
           </Col>
           <Col>
             <Accordion>
-              <Card>
-                <Card.Header style={{ padding: '0 1rem' }}>
-                  <Accordion.Toggle as={Button} variant="link" eventKey="0">
-                    Posts Count
-                  </Accordion.Toggle>
-                </Card.Header>
+              <Accordion.Item eventKey="0">
+                <Accordion.Header>Posts Count</Accordion.Header>
                 <Accordion.Collapse eventKey="0">
                   <Card.Body>
                     {userPosts && renderUserPosts(userPosts)}
                   </Card.Body>
                 </Accordion.Collapse>
-              </Card>
+              </Accordion.Item>
             </Accordion>
           </Col>
-        </Row>
+        </Row>*/}
       </Container>
     </div>
   )
