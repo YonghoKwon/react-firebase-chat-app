@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, {useEffect} from 'react';
 import './App.css';
 import {
   Switch,
@@ -13,30 +13,26 @@ import RegisterPage from './components/RegisterPage/RegisterPage';
 import firebase from './firebase';
 
 import {observer} from "mobx-react";
-import UserStore from "./store/userStore";
+import useStores from "./hooks/useStores";
 
-const userStore = new UserStore();
-
-const App = () => {
+const App = (props) => {
+  const { userStore } = useStores();
   let history = useHistory();
-  const isLoading = userStore.user.isLoading;
-  console.log('isLoading', isLoading);
-  console.log('userStore.user.isLoading', userStore.user.isLoading);
 
   useEffect(() => {
     firebase.auth().onAuthStateChanged(user => {
-      console.log('user', user)
-      //로그인이 된 상태
+      // console.log('user : ' + JSON.stringify(user));
+      // console.log('isLoading : ' + JSON.stringify(userStore.user.isLoading));
+
       if (user) {
+        // console.log('user if : ' + JSON.stringify(user));
         history.push("/");
         userStore.setUser(user);
-        console.log('userStore', userStore);
-        console.log('userStore', userStore.user);
-        console.log('userStore', userStore.user.currentUser);
-        console.log('isLoading', isLoading);
-        console.log('userStore.user.isLoading', userStore.user.isLoading);
+        // console.log('userStore : ' + JSON.stringify(userStore.user));
       } else {
+        // console.log('user else : ' + JSON.stringify(user));
         history.push("/login");
+        userStore.clearUser();
       }
     })
   }, [])
@@ -49,11 +45,13 @@ const App = () => {
     )
   } else {
     return (
-      <Switch>
-        <Route exact path="/" component={ChatPage} />
-        <Route exact path="/login" component={LoginPage} />
-        <Route exact path="/register" component={RegisterPage} />
-      </Switch>
+      // <Provider userStore={userStore}>
+        <Switch>
+          <Route exact path="/" component={ChatPage}/>
+          <Route exact path="/login" component={LoginPage}/>
+          <Route exact path="/register" component={RegisterPage}/>
+        </Switch>
+      // </Provider>
     );
   }
 }

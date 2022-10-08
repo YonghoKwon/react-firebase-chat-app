@@ -10,7 +10,6 @@ class userStore {
     makeObservable(this, {
       user: observable,
       setUser: action,
-      // removeItem: action.bound,
       getUser: computed,
     });
   }
@@ -26,8 +25,19 @@ class userStore {
     }
   }
 
+  setPhotoURL = (url) => {
+    this.user.currentUser = {
+      ...this.user.currentUser,
+      photoURL: url
+    }
+  }
 
-
+  clearUser = () => {
+    this.user = {
+      currentUser: null,
+      isLoading: false
+    }
+  }
 }
 
 export default userStore;

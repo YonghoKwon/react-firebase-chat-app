@@ -7,12 +7,25 @@ import {
   BrowserRouter as Router,
 } from "react-router-dom";
 
+import {Provider} from "mobx-react";
+import UserStore from "./store/userStore";
+import ChatRoomStore from "./store/chatRoomStore";
+
+const userStore = new UserStore();
+const chatRoomStore = new ChatRoomStore();
+
 ReactDOM.render(
-  <React.StrictMode>
-    <Router >
-      <App />
-    </Router>
-  </React.StrictMode>,
+  // <React.StrictMode>
+    <Provider
+      userStore={userStore}
+      chatRoomStore={chatRoomStore}
+    >
+      <Router >
+        <App />
+      </Router>
+    </Provider>
+  // </React.StrictMode>
+  ,
   document.getElementById('root')
 );
 
